@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Xadrez Web</title>
+  <link rel="stylesheet" href="styles.css?v=vertical-9" />
+</head>
+<body class="booting">
+  <script>
+    (function () {
+      try {
+        if (localStorage.getItem('xadrezHighContrast') === 'true') {
+          document.body.classList.add('high-contrast');
+        }
+      } catch (_) {}
+    })();
+  </script>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">PROJETO E DESENVOLVIMENTO DE SISTEMAS I</p>
+        <h1>Xadrez Web</h1>
+      </div>
+      <nav class="nav-actions">
+        <button class="nav-btn" data-view="home">Início</button>
+        <button class="nav-btn protected" data-view="lobby">Jogar</button>
+        <button class="nav-btn protected" data-view="profile">Perfil</button>
+        <button class="nav-btn protected users-admin-only" data-view="users">Usuários</button>
+        <button id="logoutBtn" class="outline hidden">Sair</button>
+        <button id="highContrastToggle" type="button" class="high-contrast-toggle"
+          aria-pressed="false" aria-label="Ativar alto contraste" title="Alternar alto contraste">Alto contraste</button>
+        <button id="narrationToggle" type="button" class="high-contrast-toggle narration-toggle"
+          aria-pressed="false" aria-label="Ativar narração por voz" title="Ativar narração por voz">Narração por voz</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="alert" class="alert hidden"></section>
+
+      <section id="homeView" class="view">
+        <div class="hero grid-2">
+          <div class="hero-card">
+            <p class="eyebrow">Jogue online</p>
+            <h2>Jogue xadrez online. Encontre um adversário e comece a partida.</h2>
+            <div class="hero-actions">
+              <button data-view="login" class="primary guest-only">Fazer login</button>
+              <button data-view="register" class="secondary guest-only">Realizar cadastro</button>
+              <button id="simulateMatchBtn" class="primary">Simular partida</button>
+            </div>
+          </div>
+
+          <div class="status-card" id="sessionCard">
+            <h3>Status do usuário</h3>
+            <p id="sessionText">Nenhum usuário logado.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="loginView" class="view">
+        <div class="panel narrow">
+          <h2>Fazer Login</h2>
+          <form id="loginForm" class="form">
+            <label>Nome de usuário<input type="text" id="loginUsername" minlength="3" required /></label>
+            <label>Senha<input type="password" id="loginPassword" minlength="3" required /></label>
+            <button class="primary" type="submit">Entrar</button>
+          </form>
+        </div>
+      </section>
+
+      <section id="registerView" class="view">
+        <div class="panel narrow">
+          <h2>Realizar Cadastro</h2>
+          <form id="registerForm" class="form">
+            <label>Nome de usuário<input type="text" id="registerUsername" minlength="3" required /></label>
+            <label>Senha<input type="password" id="registerPassword" minlength="3" required /></label>
+            <button class="primary" type="submit">Cadastrar</button>
+          </form>
+        </div>
+      </section>
+
+      <section id="profileView" class="view">
+        <div class="grid-2">
+          <div class="panel">
+            <h2>Perfil do Usuário</h2>
+            <div class="profile-box">
+              <div class="avatar" id="profileAvatar">♟</div>
+              <div>
+                <h3 id="profileName">-</h3>
+                <p><strong>Elo:</strong> <span id="profileElo">-</span></p>
+              </div>
+            </div>
+            <form id="updateForm" class="form compact">
+              <label>Nome de usuário<input type="text" id="updateUsername" minlength="3" required /></label>
+              <label>Senha<input type="password" id="updatePassword" minlength="3" required /></label>
+              <button class="secondary" type="submit">Atualizar perfil</button>
+            </form>
+            <button id="deleteAccountBtn" class="danger">Excluir usuário</button>
+          </div>
+
+          <div class="panel">
+            <div class="history-heading">
+              <h2>Histórico de Partidas</h2>
+              <div id="historyControls" class="history-controls hidden">
+                <button id="historyPrevious" type="button" class="outline" aria-label="Partida anterior" aria-controls="matchHistory">↑</button>
+                <span id="historyPosition" aria-live="polite" aria-atomic="true"></span>
+                <button id="historyNext" type="button" class="outline" aria-label="Próxima partida" aria-controls="matchHistory">↓</button>
+              </div>
+            </div>
+            <p id="historyHelp" class="history-help hidden">Role para cima ou para baixo, ou use as setas para ver as partidas.</p>
+            <div id="matchHistory" class="match-history empty" role="region" aria-roledescription="carrossel" aria-label="Histórico de partidas" aria-describedby="historyHelp" tabindex="0">Nenhuma partida encontrada.</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="usersView" class="view">
+        <div class="panel">
+          <h2>Usuários ativos</h2>
+          <p class="muted">Lista de usuários com sessão ativa no momento.</p>
+          <div class="admin-actions">
+            <button id="endAllMatchesBtn" type="button" class="danger">Encerrar todas as partidas ativas</button>
+          </div>
+          <div id="usersList" class="table-wrap"></div>
+        </div>
+      </section>
+
+      <section id="lobbyView" class="view">
+        <div class="panel center">
+          <h2>Procurar Partida</h2>
+          <p>Ao procurar uma partida, o sistema tenta parear você com outro usuário.</p>
+          <div class="lobby-actions">
+            <button id="findMatchBtn" class="primary">Procurar Partida</button>
+            <button id="simulateMatchBtnLobby" class="primary">Simular partida</button>
+            <button id="cancelSearchBtn" class="outline">Cancelar busca</button>
+          </div>
+          <p id="matchmakingStatus" class="status-text" data-narrate>Aguardando ação.</p>
+          <div class="manual-match">
+            <h3>Jogar contra a máquina</h3>
+            <p>Você joga com as brancas. Partidas de treino não alteram seu ranking.</p>
+            <div class="inline-form">
+              <label for="computerDifficulty">Dificuldade</label>
+              <select id="computerDifficulty">
+                <option value="EASY">Fácil</option>
+                <option value="MEDIUM">Médio</option>
+                <option value="HARD">Difícil</option>
+              </select>
+              <button id="playComputerBtn" class="primary" type="button">Jogar contra a máquina</button>
+            </div>
+          </div>
+          <div class="manual-match">
+            <h3>Criar partida manual</h3>
+            <p class="muted">Use para apresentação, caso não haja dois usuários buscando partida ao mesmo tempo.</p>
+            <div class="inline-form">
+              <input type="number" id="whitePlayerId" placeholder="ID brancas" />
+              <input type="number" id="blackPlayerId" placeholder="ID pretas" />
+              <button id="createManualMatchBtn" class="secondary">Criar</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="gameView" class="view">
+        <div class="game-layout">
+          <aside class="panel game-info">
+            <h2>Partida</h2>
+            <p id="computerMatchInfo" class="hidden" aria-live="polite"></p>
+            <p id="computerThinking" class="hidden" role="status" data-narrate>Máquina pensando…</p>
+            <p><strong>ID:</strong> <span id="gameMatchId">-</span></p>
+            <p id="playerColorRow" class="hidden"><strong>Suas peças:</strong> <span id="playerColor">-</span></p>
+            <p><strong>Turno:</strong> <span id="currentPlayer">-</span></p>
+            <p><strong>Xeque:</strong> <span id="checkStatus">Não</span></p>
+            <div class="last-opponent-move-info" aria-live="polite" aria-atomic="true">
+              <p><strong id="lastMoveLabel">Última jogada do oponente:</strong></p>
+              <p id="lastOpponentMove">Aguardando a primeira jogada.</p>
+            </div>
+            <p class="last-move-help"><span class="move-key">O</span> origem · <span class="move-key">D</span> destino da última jogada. Bolinhas indicam movimentos possíveis.</p>
+            <button id="refreshBoardBtn" class="secondary hidden">Reiniciar tabuleiro (análise)</button>
+            <button data-view="lobby" class="outline">Voltar ao lobby</button>
+          </aside>
+
+          <div class="board-area">
+            <section class="captured-strip" aria-labelledby="capturedBlackLabel">
+              <p id="capturedBlackLabel">Capturadas pelas pretas <span id="capturedBlackCount">(0)</span></p>
+              <div id="capturedByBlack" class="captured-pieces">Nenhuma peça capturada.</div>
+            </section>
+            <div class="board-frame">
+              <div class="board-labels file-labels" aria-hidden="true">
+                <span>a</span><span>b</span><span>c</span><span>d</span><span>e</span><span>f</span><span>g</span><span>h</span>
+              </div>
+              <div class="rank-labels" aria-hidden="true">
+                <span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span>
+              </div>
+              <div class="board-wrapper">
+              <div id="chessBoard" class="chess-board"></div>
+              <div id="checkmateOverlay" class="checkmate-overlay hidden">
+                <p id="checkmateWinnerText" class="checkmate-text">Brancas vencem!</p>
+              </div>
+              <div id="promotionModal" class="promotion-modal hidden">
+                <div class="promotion-menu" role="dialog" aria-modal="true" aria-label="Escolha a peça para promoção">
+                  <p class="promotion-title">Escolha a promoção</p>
+                  <div class="promotion-options">
+                    <button class="promotion-btn" data-promotion-piece="Q" type="button" aria-label="Promover para rainha">Q</button>
+                    <button class="promotion-btn" data-promotion-piece="R" type="button" aria-label="Promover para torre">R</button>
+                    <button class="promotion-btn" data-promotion-piece="B" type="button" aria-label="Promover para bispo">B</button>
+                    <button class="promotion-btn" data-promotion-piece="N" type="button" aria-label="Promover para cavalo">N</button>
+                  </div>
+                </div>
+              </div>
+              </div>
+            </div>
+            <section class="captured-strip" aria-labelledby="capturedWhiteLabel">
+              <p id="capturedWhiteLabel">Capturadas pelas brancas <span id="capturedWhiteCount">(0)</span></p>
+              <div id="capturedByWhite" class="captured-pieces">Nenhuma peça capturada.</div>
+            </section>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="match-display.js?v=vertical-9"></script>
+  <script src="narrator.js?v=vertical-9"></script>
+  <script src="app.js?v=vertical-9"></script>
+</body>
+</html>
