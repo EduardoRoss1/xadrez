@@ -217,7 +217,7 @@ function normalizeAlertMessage(message) {
     'username must have at most 64 characters': 'O nome de usuário deve ter no máximo 64 caracteres.',
     'password must have at most 128 characters': 'A senha deve ter no máximo 128 caracteres.',
     'invalid or missing request body': 'Requisição inválida.',
-    'cannot surrender simulation match': 'Não é possível desistir de uma partida de simulação.'
+    'cannot surrender simulation match': 'Não é possível desistir no modo análise.'
   };
 
   // Mensagens exatas do motor de xadrez (ChessMatch), que antes apareciam em inglês.
@@ -231,8 +231,17 @@ function normalizeAlertMessage(message) {
     'promotion piece type is required: q, r, b or n': 'Escolha a peça para a promoção.',
   };
   if (engineTranslations[lowered]) return engineTranslations[lowered];
-  if (lowered.startsWith('this is not a white piece')) return 'Essa peça não é sua: é a vez das brancas.';
-  if (lowered.startsWith('this is not a black piece')) return 'Essa peça não é sua: é a vez das pretas.';
+  // No modo análise o usuário move os dois lados: a peça é "dele", só não é a vez daquela cor.
+  if (lowered.startsWith('this is not a white piece')) {
+    return simulationMode
+      ? 'Agora é a vez das brancas. Selecione uma peça branca.'
+      : 'Essa peça não é sua: é a vez das brancas.';
+  }
+  if (lowered.startsWith('this is not a black piece')) {
+    return simulationMode
+      ? 'Agora é a vez das pretas. Selecione uma peça preta.'
+      : 'Essa peça não é sua: é a vez das pretas.';
+  }
   if (lowered.startsWith('there is already a')) return 'Já existe uma peça sua nessa casa.';
   if (lowered.startsWith('invalid chess position')) return 'Casa inválida no tabuleiro.';
 
@@ -629,7 +638,7 @@ function updateSessionUI() {
 
   document.getElementById('sessionText').textContent = isLogged
     ? `Logado como ${currentUser.username} | Elo ${currentUser.elo}`
-    : (simulationMode ? 'Modo playground ativo (sem login).' : 'Nenhum usuário logado.');
+    : (simulationMode ? 'Modo análise ativo (sem login).' : 'Nenhum usuário logado.');
 }
 
 async function showView(name) {
@@ -1368,7 +1377,7 @@ function narrateBoardUpdate(board) {
     if (activeMatch?.computerDifficulty) {
       parts.push(`Contra a máquina, nível ${computerDifficultyNames[activeMatch.computerDifficulty] || activeMatch.computerDifficulty}.`);
     }
-    if (simulationMode) parts.push('Playground: você move as peças dos dois lados.');
+    if (simulationMode) parts.push('Modo análise: você move as peças dos dois lados.');
     else if (playerColor) parts.push(`Você joga com as ${colorNamePlural(playerColor)}.`);
     const lastMove = turn === 'white' ? board.lastBlackMove : board.lastWhiteMove;
     if (lastMove) parts.push(`Último lance: ${ChessDisplay.spokenMove(lastMove, moveActor(oppositeColor(turn), playerColor))}`);
@@ -1807,7 +1816,7 @@ async function startSimulationMatch() {
 
   const lobbyStatus = document.getElementById('matchmakingStatus');
   if (lobbyStatus) {
-    lobbyStatus.textContent = 'Criando partida de simulação...';
+    lobbyStatus.textContent = 'Abrindo modo análise...';
   }
 
   try {
@@ -1817,12 +1826,12 @@ async function startSimulationMatch() {
     });
     console.log('[simulate] match created', match);
 
-    showAlert('Playground iniciado. Nenhum usuário foi criado.');
+    showAlert('Modo análise iniciado. Nenhum usuário foi criado.');
     openMatch(match.id, true);
   } catch (error) {
     console.error('[simulate] failed to create simulation match', error);
     if (lobbyStatus) {
-      lobbyStatus.textContent = 'Falha ao criar simulação.';
+      lobbyStatus.textContent = 'Falha ao abrir o modo análise.';
     }
     showAlert(error.message);
   }

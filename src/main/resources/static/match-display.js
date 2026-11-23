@@ -10,7 +10,7 @@
     return `${hours ? hours + 'h ' : ''}${String(minutes).padStart(2, '0')}min ${String(rest).padStart(2, '0')}s`;
   }
   function opponentMove(board, playerColor) {
-    // No playground, indica o lance do lado que acabou de jogar.
+    // No modo análise, indica o lance do lado que acabou de jogar.
     const color = playerColor || String(board.currentPlayer || '').toLowerCase();
     if (color === 'white') return board.lastBlackMove || null;
     if (color === 'black') return board.lastWhiteMove || null;

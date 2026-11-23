@@ -70,7 +70,8 @@ cor, inclusive contra a máquina; movimentos inválidos e a análise da IA não 
 esse registro. No playground, é exibido o último lance do lado que acabou de jogar.
 
 No alto contraste, o último lance usa contorno ciano tracejado e marcas O/D. Os
-movimentos possíveis continuam como bolinhas/amarelas ou anéis de captura. As casas
+movimentos possíveis continuam como bolinhas amarelas ou anéis de captura (em amarelo
+escuro nas casas brancas, para ficarem visíveis). As casas
 possuem rótulos para leitor de tela com coordenada, peça, cor e indicação do lance.
 
 As durações são persistidas pelas datas da partida. O último lance permanece em
@@ -107,12 +108,12 @@ Com a narração ativa, o site fala:
   poder ser selecionada (por exemplo, "Aguarde seu turno.");
 - xeque, xeque-mate, empate, "Sua vez", o resumo ao abrir uma partida e o fim de jogo;
 - os avisos do site, a tela aberta, o status da busca de partida e "Máquina pensando…";
-- o botão, link ou campo sob o mouse ou com foco do teclado (as casas do tabuleiro
-  dizem coordenada, peça e cor);
+- o botão, link ou campo clicado ou com foco do teclado (passar o mouse por cima
+  não fala nada; ao clicar numa casa do tabuleiro, fala a seleção ou o lance);
 - qualquer texto selecionado com o mouse ou com Shift + setas.
 
-Avisos do jogo têm prioridade: interrompem a leitura do mouse, que é substituída
-quando o mouse passa para outro botão, para não acumular atraso. Ao recarregar a
+Avisos do jogo têm prioridade: interrompem a leitura do botão clicado, que é
+substituída quando outro botão é clicado, para não acumular atraso. Ao recarregar a
 página com a narração ativa, o navegador só libera o áudio após o primeiro clique ou
 tecla; as falas pendentes são reproduzidas nesse momento. O código fica em
 `narrator.js`; os textos dos lances, em `match-display.js`.

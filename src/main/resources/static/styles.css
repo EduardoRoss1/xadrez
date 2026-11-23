@@ -737,6 +737,16 @@ body.high-contrast .square.possible-move.possible-capture::after {
   border: 4px solid #ffff00;
 }
 
+/* Em casas brancas o amarelo puro some; usa-se um amarelo escuro (~4:1 sobre o branco). */
+body.high-contrast .square.light.possible-move::after {
+  background: #9e7700;
+}
+
+body.high-contrast .square.light.possible-move.possible-capture::after {
+  background: transparent;
+  border-color: #9e7700;
+}
+
 body.high-contrast .board-labels.file-labels,
 body.high-contrast .rank-labels {
   color: #ffffff;
@@ -807,7 +817,7 @@ body.high-contrast .promotion-btn:hover {
 .last-opponent-move-info { border-top: 1px solid var(--line); margin-top: 16px; }
 .last-move-help { color: var(--muted); font-size: 12px; line-height: 1.7; }
 .move-key { display: inline-block; padding: 0 4px; border: 1px solid currentColor; border-radius: 3px; font-weight: 800; }
-/* No alto contraste, bolinhas continuam amarelas; o último lance usa ciano e borda tracejada. */
+/* No alto contraste, bolinhas são amarelas (amarelo escuro nas casas brancas); o último lance usa ciano e borda tracejada. */
 body.high-contrast .square.last-opponent-move.light { background: #ffffff; }
 body.high-contrast .square.last-opponent-move.dark { background: #000000; }
 body.high-contrast .square.last-opponent-move {

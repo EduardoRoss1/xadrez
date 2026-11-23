@@ -1,5 +1,5 @@
 // Narração em áudio para acessibilidade (Web Speech API, sem serviço externo).
-// Quando ativada: fala avisos do jogo enviados pelo app.js, lê botões/campos sob o mouse
+// Quando ativada: fala avisos do jogo enviados pelo app.js, lê o botão/campo clicado
 // ou com foco do teclado e lê o texto que o usuário selecionar.
 (function () {
   const STORAGE_KEY = 'xadrezNarration';
@@ -8,9 +8,8 @@
     && typeof window.SpeechSynthesisUtterance === 'function';
   const synth = supported ? window.speechSynthesis : null;
 
-  // Elementos lidos ao passar o mouse ou receber foco.
-  const HOVER_SELECTOR = 'button, a[href], select, input, textarea, [role="button"], label';
-  const HOVER_DELAY_MS = 180;      // evita narrar tudo ao apenas atravessar a tela com o mouse
+  // Elementos lidos ao serem clicados ou receberem foco pelo teclado.
+  const INTERACTIVE_SELECTOR = 'button, a[href], select, input, textarea, [role="button"], label';
   const MAX_SELECTION_CHARS = 1200;
 
   let enabled = false;
@@ -19,8 +18,7 @@
   let current = null;      // item sendo falado agora
   let token = 0;           // invalida eventos de falas já canceladas
   let blocked = false;     // o navegador exige um clique/tecla antes de permitir áudio
-  let hoverTimer = null;
-  let lastHovered = null;
+  let pointerFocus = false; // o foco atual veio de um clique, não do teclado
   let lastSelection = '';
 
   function readStored() {
@@ -44,8 +42,8 @@
   }
 
   // --- Fila de falas ---------------------------------------------------------------
-  // Avisos do jogo (prioridade normal) entram na fila e interrompem leituras de mouse/foco.
-  // Leituras de mouse/foco (low) substituem umas às outras, para não acumular atraso.
+  // Avisos do jogo (prioridade normal) entram na fila e interrompem leituras de clique/foco.
+  // Leituras de clique/foco (low) substituem umas às outras, para não acumular atraso.
 
   function stopCurrent() {
     token++;
@@ -164,20 +162,25 @@
     return !!(el && el.getClientRects().length) && !el.closest('.hidden');
   }
 
-  function onMouseOver(event) {
-    const el = event.target.closest?.(HOVER_SELECTOR) || null;
-    if (el === lastHovered) return;
-    lastHovered = el;
-    clearTimeout(hoverTimer);
-    if (!el || !enabled) return;
-    hoverTimer = setTimeout(() => {
-      if (lastHovered === el && isVisible(el)) announce(describeElement(el), { low: true });
-    }, HOVER_DELAY_MS);
+  function onPointerDown() {
+    pointerFocus = true;
+    setTimeout(() => { pointerFocus = false; }, 0);
   }
 
+  // Nada é lido ao apenas passar o mouse: só ao clicar.
+  function onClick(event) {
+    if (!enabled || event.detail === 0) return; // detail 0 = Enter/Espaço, já lido pelo foco
+    const el = event.target.closest?.(INTERACTIVE_SELECTOR);
+    // As casas do tabuleiro são narradas pelo app.js (seleção, movimentos, motivo do erro).
+    if (!el || el.classList.contains('square') || !isVisible(el)) return;
+    announce(describeElement(el), { low: true });
+  }
+
+  // Navegação pelo teclado (Tab): lê o elemento que recebeu o foco.
   function onFocusIn(event) {
-    const el = event.target.closest?.(HOVER_SELECTOR);
-    if (el && enabled) announce(describeElement(el), { low: true });
+    if (pointerFocus || !enabled) return;
+    const el = event.target.closest?.(INTERACTIVE_SELECTOR);
+    if (el) announce(describeElement(el), { low: true });
   }
 
   function onSelectionEnd() {
@@ -249,7 +252,7 @@
     if (enabled) {
       blocked = false;
       announce('Narração ativada. Os lances, a peça selecionada e os avisos do jogo serão falados. '
-        + 'Passe o mouse sobre um botão ou selecione um texto para ouvi-lo.');
+        + 'Clique em um botão ou selecione um texto para ouvi-lo.');
     }
   }
 
@@ -263,7 +266,8 @@
       // da primeira fala; a fila espera esse clique/tecla.
       document.addEventListener('pointerdown', unblock, true);
       document.addEventListener('keydown', unblock, true);
-      document.addEventListener('mouseover', onMouseOver, { passive: true });
+      document.addEventListener('pointerdown', onPointerDown, true);
+      document.addEventListener('click', onClick, true);
       document.addEventListener('focusin', onFocusIn);
       document.addEventListener('mouseup', onSelectionEnd);
       document.addEventListener('keyup', event => { if (event.shiftKey || event.key === 'Shift') onSelectionEnd(); });
